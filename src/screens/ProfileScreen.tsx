@@ -717,8 +717,7 @@ export default function ProfileScreen({ navigation }: any) {
           <Text style={styles.heading}>
             Profile
           </Text>
-
-          {loginType !== 'guest' ? (
+          {/*{loginType !== 'guest' ? (
             <View>
               <TouchableOpacity
                 accessibilityRole="button"
@@ -732,14 +731,14 @@ export default function ProfileScreen({ navigation }: any) {
                 />
               </TouchableOpacity>
             </View>
-          ) : null}
+          ) : null}*/}
 
           <DeleteAccountModal
             visible={deleteModalVisible}
             onCancel={() => setDeleteModalVisible(false)}
             onConfirm={handleDeleteAccount}
             isDeleting={isDeleting}
-          />
+          /> 
         </View>
 
         {/* PROFILE IMAGE */}
