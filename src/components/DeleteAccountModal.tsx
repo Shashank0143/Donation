@@ -8,7 +8,7 @@ import {
   Image,
 } from 'react-native';
 import { scale , verticalScale , moderateScale } from '../utils/responsive';
-const DeactivateModal = ({ visible, onCancel, onConfirm }) => {
+const DeleteAccountModal = ({ visible, onCancel, onConfirm, isDeleting = false }) => {
   return (
     <Modal
       visible={visible}
@@ -29,11 +29,14 @@ const DeactivateModal = ({ visible, onCancel, onConfirm }) => {
           </View>
 
           {/* Title */}
-          <Text style={styles.title}>Deactivate Account?</Text>
+          <Text style={styles.title}>Delete Account?</Text>
 
           {/* Description */}
           <Text style={styles.description}>
-            Are you sure you want to deactivate your account?
+            This permanently deletes your account and all associated data: your
+            name, email address, profile photo, phone number, address, date of
+            birth, and saved charities. If you signed in with Apple, we also
+            revoke this app's access to your Apple ID. This cannot be undone.
           </Text>
 
           {/* Buttons */}
@@ -41,14 +44,18 @@ const DeactivateModal = ({ visible, onCancel, onConfirm }) => {
 
             <TouchableOpacity
               style={styles.cancelButton}
-              onPress={onCancel}>
+              onPress={onCancel}
+              disabled={isDeleting}>
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.logoutButton}
-              onPress={onConfirm}>
-              <Text style={styles.logoutText}>Deactivate</Text>
+              onPress={onConfirm}
+              disabled={isDeleting}>
+              <Text style={styles.logoutText}>
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </Text>
             </TouchableOpacity>
 
           </View>
@@ -58,7 +65,7 @@ const DeactivateModal = ({ visible, onCancel, onConfirm }) => {
   );
 };
 
-export default DeactivateModal;
+export default DeleteAccountModal;
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,

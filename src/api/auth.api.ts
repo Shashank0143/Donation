@@ -102,21 +102,15 @@ export const applelogoutApi = async () => {
   }
 };
 
-export const deactivateAccountApi = async () => {
+// Permanently deletes the signed-in user's account and data. The server
+// identifies the user from the token and revokes Sign in with Apple tokens.
+export const deleteAccountApi = async () => {
   try {
-    const response = await api.post(
-      '/users/delete-account',
-      {
-        userid: appStore.user?.userid,
-        email: appStore.user?.email,
+    const response = await api.delete('/users/account', {
+      headers: {
+        Authorization: `Bearer ${appStore.token}`,
       },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${appStore.token}`,
-        },
-      }
-    );
+    });
     if (response.data.success) {
 
       Toast.show({

@@ -23,14 +23,14 @@ import {
 } from 'react-native-image-picker';
 
 import appStore from '../store/appStore';
-import { applelogoutApi, deactivateAccountApi, handleGuestLogout, updateProfile } from '../api/auth.api';
+import { deleteAccountApi, handleGuestLogout, updateProfile } from '../api/auth.api';
 import Fonts from '../constants/Fonts';
 import Toast from 'react-native-toast-message';
 import { useFocusEffect } from '@react-navigation/native';
 import { moderateScale, scale, verticalScale } from '../utils/responsive';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import DeactivateModal from '../components/DeactivateModal';
+import DeleteAccountModal from '../components/DeleteAccountModal';
 import LogoutModal from '../components/LogoutModal';
 
 export default function ProfileScreen({ navigation }: any) {
@@ -117,36 +117,45 @@ export default function ProfileScreen({ navigation }: any) {
     profileImage: user?.profileimage ?? '',
   });
 
-  const [deactivateModalVisible, setDeactivateModalVisible] = useState(false);
-  const loginType = AsyncStorage.getItem('LOGIN_TYPE');
-  const handleDeactivate = async () => {
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [loginType, setLoginType] = useState<string | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      AsyncStorage.getItem('LOGIN_TYPE').then(setLoginType);
+    }, []),
+  );
+
+  // Permanently deletes the account. The server deletes the user's data and
+  // revokes Sign in with Apple tokens, so no separate Apple logout call is needed.
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
     try {
-      const loginType = await AsyncStorage.getItem('LOGIN_TYPE');
-      setDeactivateModalVisible(false);
-
-      if (loginType === 'google') {
-        await deactivateAccountApi();
-        await GoogleSignin.signOut();
-      }
-
-      if (loginType === 'apple') {
-        console.log("apple login");
-        // Call your backend logout API
-        await deactivateAccountApi();
-        await applelogoutApi();
-      }
-
-      await AsyncStorage.removeItem('LOGIN_TYPE');
-
-
-
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Login' }],
-      });
-
+      await deleteAccountApi();
     } catch (error) {
+      // deleteAccountApi already shows an error toast; keep the account and the dialog open.
+      setIsDeleting(false);
+      return;
     }
+
+    if (loginType === 'google') {
+      try {
+        await GoogleSignin.revokeAccess();
+        await GoogleSignin.signOut();
+      } catch (error) {
+      }
+    }
+
+    await AsyncStorage.removeItem('LOGIN_TYPE');
+    appStore.clearSession();
+    setIsDeleting(false);
+    setDeleteModalVisible(false);
+
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
   };
   const resetProfileData = useCallback(() => {
     const currentUser = appStore.user;
@@ -709,28 +718,27 @@ export default function ProfileScreen({ navigation }: any) {
             Profile
           </Text>
 
-          <View>
-            <TouchableOpacity
-              // style={styles.notificationBtn}
-              onPress={async () => {
-                if (await loginType != 'guest') {
+          {loginType !== 'guest' ? (
+            <View>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Delete account"
+                onPress={() => setDeleteModalVisible(true)}
+              >
+                <Image
+                  source={require('../assets/images/deactivate.png')}
+                  style={{ height: verticalScale(24), width: scale(24) }}
+                // resizeMode="contain"
+                />
+              </TouchableOpacity>
+            </View>
+          ) : null}
 
-                  setDeactivateModalVisible(true)}
-                }
-              }
-            >
-              <Image
-                source={require('../assets/images/deactivate.png')}
-                style={{ height: verticalScale(24), width: scale(24) }}
-              // resizeMode="contain"
-              />
-            </TouchableOpacity>
-          </View>
-
-          <DeactivateModal
-            visible={deactivateModalVisible}
-            onCancel={() => setDeactivateModalVisible(false)}
-            onConfirm={handleDeactivate}
+          <DeleteAccountModal
+            visible={deleteModalVisible}
+            onCancel={() => setDeleteModalVisible(false)}
+            onConfirm={handleDeleteAccount}
+            isDeleting={isDeleting}
           />
         </View>
 
@@ -848,8 +856,8 @@ export default function ProfileScreen({ navigation }: any) {
             !hasChanges &&
             styles.saveBtnDisabled,
           ]}
-          onPress={async () => {
-            if (await loginType == 'guest') {
+          onPress={() => {
+            if (loginType === 'guest') {
               setGuestAlertModalVisible(true);
             } else {
               handleSave();
@@ -867,6 +875,23 @@ export default function ProfileScreen({ navigation }: any) {
               : 'Save Changes'}
           </Text>
         </TouchableOpacity>
+
+        {loginType !== 'guest' ? (
+          <>
+            <TouchableOpacity
+              style={styles.deleteAccountBtn}
+              onPress={() => setDeleteModalVisible(true)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.deleteAccountText}>
+                Delete Account
+              </Text>
+            </TouchableOpacity>
+            <Text style={styles.deleteAccountHint}>
+              Permanently deletes your account and all associated data.
+            </Text>
+          </>
+        ) : null}
         <LogoutModal
           visible={guestAlertModalVisible}
           onCancel={() => setGuestAlertModalVisible(false)}
@@ -1389,6 +1414,31 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: moderateScale(16),
     fontFamily: Fonts.Inter.semiBold,
+  },
+
+  deleteAccountBtn: {
+    marginTop: verticalScale(12),
+    height: verticalScale(50),
+    borderRadius: moderateScale(25),
+    borderWidth: 1,
+    borderColor: '#F5C2C0',
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  deleteAccountText: {
+    color: '#E53935',
+    fontSize: moderateScale(15),
+    fontFamily: Fonts.Inter.semiBold,
+  },
+
+  deleteAccountHint: {
+    marginTop: verticalScale(6),
+    textAlign: 'center',
+    color: '#777777',
+    fontSize: moderateScale(12),
+    fontFamily: Fonts.Inter.regular,
   },
 
   logoutBtn: {

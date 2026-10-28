@@ -32,6 +32,14 @@ class AppStore {
     this.savedWebsites = likedWebsites;
   }
 
+  clearSession() {
+    this.user = null;
+    this.token = '';
+    this.authCode = '';
+    this.categories = [];
+    this.savedWebsites = [];
+  }
+
   addSavedWebsite(website: any) {
     const exists = this.savedWebsites.some(
       item => item.websiteid === website.websiteid,
