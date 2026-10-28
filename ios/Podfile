@@ -4,8 +4,10 @@ require Pod::Executable.execute_command('node', ['-p',
     "react-native/scripts/react_native_pods.rb",
     {paths: [process.argv[1]]},
   )', __dir__]).strip
-
+ENV['RCT_NEW_ARCH_ENABLED'] = '0'
 platform :ios, min_ios_version_supported
+pod 'GoogleUtilities', :modular_headers => true
+pod 'RecaptchaInterop', :modular_headers => true
 prepare_react_native_project!
 
 linkage = ENV['USE_FRAMEWORKS']

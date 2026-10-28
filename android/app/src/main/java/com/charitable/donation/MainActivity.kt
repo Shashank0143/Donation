@@ -1,4 +1,4 @@
-package com.charitable
+package com.charitable.donation
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

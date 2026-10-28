@@ -1,4 +1,4 @@
-package com.charitable
+package com.charitable.donation
 
 import android.app.Application
 import com.facebook.react.PackageList
